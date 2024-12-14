@@ -14,7 +14,7 @@ pip install pydub
 brew install ffmpeg
 
 代码说明：
-1、importdocx.py
+1、createtxtbyword.py.py
 这个文件主要是选择一个后缀是docx的word文档，然后根据word文档的一级标题和二级标题生成若干txt文件。
 2、createmp3.py
 这个文件功能主要是选择一个txt文件所在目录，遍历里面的所有txt文件，调用tts服务生成对应的mp3.
