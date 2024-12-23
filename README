@@ -8,9 +8,11 @@
 
 运行环境：
 1、需要安装python，我安装的是3.12.4
-2、安装pydub
+2、安装python-docx库
+pip install python-docx
+3、安装pydub
 pip install pydub
-3、安装ffmpeg
+4、安装ffmpeg
 brew install ffmpeg
 
 代码说明：
