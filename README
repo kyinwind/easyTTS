@@ -14,6 +14,8 @@ pip install python-docx
 pip install pydub
 4、安装ffmpeg
 brew install ffmpeg
+5、安装azure.cognitiveservices.speech，这是微软的api sdk
+pip3 install azure-cognitiveservices-speech
 
 代码说明：
 1、createtxtbyword.py.py
