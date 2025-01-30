@@ -1,9 +1,7 @@
-from gradio_client import Client
 from gradio_client import Client, file
 
 import os
 import re
-import azure.cognitiveservices.speech as speechsdk
 from tkinter import Tk
 from tkinter.filedialog import askdirectory
 from pydub import AudioSegment
@@ -29,13 +27,20 @@ def split_text(text, max_length=1000):
         paragraphs.append(text)
     return paragraphs
 
-def synthesize_text_to_mp3(text, output_path, speed="0.8"):
+def synthesize_text_to_mp3(text, output_path, speed="0.8",cankao_file="",cankao_txt=""):
+    #print("文件是否存在:", os.path.exists(cankao_file))
+    #print("cankao_file 类型:", type(cankao_file))
+    from gradio_client import handle_file
+    #print("file 函数:", file)
+    #print(file(cankao_file))
+    # 确保传递的 `cankao_file` 是一个字符串路径，而不是文件对象
+    ref_audio_path = handle_file(cankao_file)
     result = client.predict(
         text= text,
         text_lang="中文",
-        ref_audio_path=file(r'C:\yangxuehui\GPT-SoVITS\v2\GPT-SoVITS-v2-240821\参考\参考.wav'),
+        ref_audio_path=ref_audio_path,  # 这里修正
         aux_ref_audio_paths=[],
-        prompt_text="般若波罗蜜多心经，观自在菩萨。",
+        prompt_text=cankao_txt,
         prompt_lang="中文",
         top_k=5,
         top_p=1,
@@ -70,8 +75,8 @@ def merge_audio_files(file_list, output_file):
     combined_audio = AudioSegment.from_file(file_list[0])
 
     # 逐一加载并合并音频文件
-    for file in file_list[1:]:
-        audio = AudioSegment.from_file(file)
+    for audiofile in file_list[1:]:
+        audio = AudioSegment.from_file(audiofile)
         combined_audio += audio
 
     # 设置导出格式和参数
@@ -88,7 +93,7 @@ def extract_number(file_name):
     match = re.search(r'\d+', file_name)
     return int(match.group()) if match else float('inf')  # 如果没有数字，放在最后
 
-def process_txt_files_in_directory(input_directory, output_directory, speed="0.8"):
+def process_txt_files_in_directory(input_directory, output_directory, speed="0.8",cankao_file="",cankao_txt=""):
     """
     遍历指定目录下的所有 `.txt` 文件，并生成对应的 MP3 文件，支持语速调整。
     """
@@ -119,7 +124,7 @@ def process_txt_files_in_directory(input_directory, output_directory, speed="0.8
             # 为每个段落生成 MP3 文件
             for i, paragraph in enumerate(paragraphs):
                 temp_file = os.path.join(output_directory, f"{base_name}_part{i + 1}.mp3")
-                synthesize_text_to_mp3(paragraph, temp_file, speed=speed)
+                synthesize_text_to_mp3(paragraph, temp_file, speed=speed,cankao_file=cankao_file,cankao_txt=cankao_txt)
                 temp_files.append(temp_file)
 
             # 合并生成的 MP3 文件
@@ -137,7 +142,18 @@ if __name__ == "__main__":
     # 使用 tkinter 弹出窗口让用户选择输入目录
     Tk().withdraw()  # 隐藏主窗口
     input_dir = askdirectory(title="请选择包含 .txt 文件的目录")
-
+    # 获取脚本所在目录，推导出参考音频的目录
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+    print("脚本所在目录:", script_directory)
+    cankao_dir = os.path.join(script_directory, "cankao")
+    # 获取参考音频文件，即参考目录下一个名为cankao.wav的文件
+    cankao_file = os.path.join(cankao_dir, "cankao.wav") 
+    cankao_txtfile = os.path.join(cankao_dir, "cankao.txt")
+    #读出参考文本文件的内容
+    with open(cankao_txtfile, "r", encoding="utf-8") as file:
+        cankao_text = file.read()
+    print("参考音频文件:", cankao_file)
+    print("参考文本内容:", cankao_text)
     # 检查用户是否选择了目录
     if not input_dir:
         print("未选择任何目录，程序退出。")
@@ -151,5 +167,5 @@ if __name__ == "__main__":
         #output_dir = os.path.join(input_dir, "output_mp3_files")
         output_dir = input_dir
         # 执行批量处理
-        process_txt_files_in_directory(input_dir, output_dir, speed=speed)
+        process_txt_files_in_directory(input_dir, output_dir, speed=speed,cankao_file=cankao_file,cankao_txt=cankao_text)
         print(f"所有文件已处理，MP3 文件保存在: {output_dir}")
