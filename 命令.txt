@@ -1,1 +1,4 @@
 pyinstaller --noconfirm --onefile --windowed --icon "C:\yangxuehui\dev\easyTTS\easyTTS.ico" --add-data "C:\Users\yangx\AppData\Roaming\Python\Python312\site-packages\gradio_client\types.json;." --add-data "C:\ProgramData\miniconda3\Lib\xml\parsers\expat.py;."  "C:\yangxuehui\dev\easyTTS\easyTTS.py"
+
+
+pyinstaller --noconfirm --onefile --windowed --icon "easyTTS.ico" "easyTTS.py"

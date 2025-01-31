@@ -12,6 +12,7 @@ from docx import Document
 from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter import messagebox
 from gradio_client import handle_file
+import sys
 
 try:
     client = Client("http://localhost:9872/")
@@ -268,15 +269,35 @@ def createtxtbyword():
 # 创建主窗口
 if __name__ == "__main__":
     root = tk.Tk()
+    root.geometry("500x600")  # 设置窗口大小为400x300
+    root.eval('tk::PlaceWindow . center')  # 窗口居中显示
     root.title("EasyTTS")
 
     # 创建按钮并绑定函数
     button1 = tk.Button(root, text="1、拆分word文档", command=createtxtbyword)
-    button1.pack(pady=10)
+    button1.pack(pady=50)
 
     button2 = tk.Button(root, text="2、生成mp3文件", command=createmp3)
-    button2.pack(pady=10)
+    button2.pack(pady=50)
+    # 创建一个文本框来显示日志
+    log_text = tk.Text(root, height=200, width=350)
+    log_text.pack(pady=10)
 
+    # 重定向标准输出到文本框
+    class TextRedirector:
+        def __init__(self, widget, tag="stdout"):
+            self.widget = widget
+            self.tag = tag
+
+        def write(self, str):
+            self.widget.insert(tk.END, str)
+            self.widget.see(tk.END)  # 自动滚动到最后一行
+
+        def flush(self):
+            pass
+
+    sys.stdout = TextRedirector(log_text)
+    sys.stderr = TextRedirector(log_text)
     # 运行主循环
     root.mainloop()
 
