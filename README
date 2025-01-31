@@ -1,3 +1,5 @@
+20250131:将createtxtbyword和createmp3.py合并为easyTTS.py
+
 20250130:增加调用本地GPTSoVits服务的脚本createmp3-gptsovits.py
 
 20241214：初始创建。
