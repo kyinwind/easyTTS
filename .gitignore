@@ -1,1 +1,12 @@
 .DS_Store
+# 忽略 build 目录
+build/
+
+# 忽略 dist 目录
+dist/
+
+# 忽略 .command 文件
+*.command
+
+# 忽略 .spec 文件
+*.spec

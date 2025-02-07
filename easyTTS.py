@@ -1,25 +1,18 @@
-from gradio_client import Client, file
 import os
 import re
+from pydub import AudioSegment
+from docx import Document
 from tkinter import Tk
 import tkinter as tk
 from tkinter.filedialog import askdirectory
-from pydub import AudioSegment
-from gradio_client import Client, file
-from tkinter.filedialog import askdirectory
-from pydub import AudioSegment
-from docx import Document
 from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter import messagebox
+from gradio_client import Client, file
 from gradio_client import handle_file
 import sys
 
-try:
-    client = Client("http://localhost:9872/")
-except Exception as e:
-    Tk().withdraw()  # 隐藏主窗口
-    messagebox.showerror("错误", f"无法连接到服务器: {e}")
-    raise
+global client
+client = None  # 先初始化 client
 
 def split_text(text, max_length=1000):
     """
@@ -40,12 +33,14 @@ def split_text(text, max_length=1000):
     return paragraphs
 
 def synthesize_text_to_mp3(text, output_path, speed="0.8",cankao_file="",cankao_txt=""):
+    init_client()   # 初始化 client
     #print("文件是否存在:", os.path.exists(cankao_file))
     #print("cankao_file 类型:", type(cankao_file))
     #print("file 函数:", file)
     #print(file(cankao_file))
     # 确保传递的 `cankao_file` 是一个字符串路径，而不是文件对象
     ref_audio_path = handle_file(cankao_file)
+    global client
     result = client.predict(
         text= text,
         text_lang="中文",
@@ -122,7 +117,7 @@ def process_txt_files_in_directory(input_directory, output_directory, speed="0.8
             if os.path.exists(final_output_file) and os.path.getsize(final_output_file) > 0:
                 print(f"文件已存在且非空，跳过生成: {final_output_file}")
                 continue
-            
+
             print(f"<------------开始处理文件: {final_output_file}")
             # 读取文本内容
             with open(input_file_path, "r", encoding="utf-8") as file:
@@ -158,7 +153,7 @@ def createmp3():
     print("脚本所在目录:", script_directory)
     cankao_dir = os.path.join(script_directory, "cankao")
     # 获取参考音频文件，即参考目录下一个名为cankao.wav的文件
-    cankao_file = os.path.join(cankao_dir, "cankao.wav") 
+    cankao_file = os.path.join(cankao_dir, "cankao.wav")
     cankao_txtfile = os.path.join(cankao_dir, "cankao.txt")
     #读出参考文本文件的内容
     with open(cankao_txtfile, "r", encoding="utf-8") as file:
@@ -221,6 +216,7 @@ def split_word_by_heading(docx_file, output_folder):
     # 保存最后一部分内容
     if current_heading1:
         save_to_txt(heading_counter, current_heading1, current_heading2, current_content, output_folder)
+    return "文件已经处理完成，保存在: " + output_folder
 
 
 def save_to_txt(counter, heading1, heading2, content, output_folder):
@@ -255,19 +251,46 @@ def createtxtbyword():
     # 使用Tkinter选择文件和目录
     Tk().withdraw()  # 隐藏主窗口
     docx_path = askopenfilename(filetypes=[("Word Documents", "*.docx")], title="选择一个Word文档")
-    
+
     if not docx_path:
         print("未选择文件，程序退出。")
     else:
         # 获取源文件所在目录
         output_dir = os.path.dirname(docx_path)
-        
+
         # 运行拆分函数
         split_word_by_heading(docx_path, output_dir)
         print(f"所有文件已保存到目录：{output_dir}")
 
+from gradio_client import Client  # 确保导入正确
+
+def init_client():
+    try:
+        global client
+        client = Client("http://localhost:9872/")
+    except Exception as e:
+        #Tk().withdraw()  # 隐藏主窗口
+        messagebox.showerror("错误", f"无法连接到服务器: {e}")
+        #raise
+
 # 创建主窗口
 if __name__ == "__main__":
+    if len(sys.argv) >= 2:
+        print("sys.argv为:", sys.argv)
+        print("参数长度为len(sys.argv):", len(sys.argv))
+        funcname = sys.argv[1]
+        print("funcname为:", funcname)
+        if funcname == "split_word_by_heading":
+            document_path = sys.argv[2]  # 获取传入的 URL
+            from urllib.parse import urlparse
+            parsed_url = urlparse(document_path)
+            file_path = parsed_url.path  # 转换为普通文件路径
+            print("文件路径：",file_path)
+            # 获取源文件所在目录
+            output_dir = os.path.dirname(file_path)
+            result = split_word_by_heading(file_path,output_dir)  # 处理文档
+            print("调用结果:",result)  # 通过标准输出返回给 Swift
+
     root = tk.Tk()
     root.geometry("500x600")  # 设置窗口大小为400x300
     root.eval('tk::PlaceWindow . center')  # 窗口居中显示
@@ -298,6 +321,8 @@ if __name__ == "__main__":
 
     sys.stdout = TextRedirector(log_text)
     sys.stderr = TextRedirector(log_text)
+
+    init_client()  # 初始化 client
     # 运行主循环
     root.mainloop()
 
