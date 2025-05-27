@@ -2,7 +2,7 @@ from gradio_client import Client, file
 
 import os
 import re
-from tkinter import Tk, StringVar, Label, Button, OptionMenu
+from tkinter import Tk
 from tkinter.filedialog import askdirectory
 from pydub import AudioSegment
 
@@ -137,106 +137,35 @@ def process_txt_files_in_directory(input_directory, output_directory, speed="0.8
                 print(f"已删除临时文件: {temp_file}")
             print(f"MP3 文件生成完成: {final_output_file}------------>")
 
-def run_processing(input_dir,sovits_path, gpt_path):
-    if input_dir and os.path.isdir(input_dir) and sovits_path and gpt_path:
-        setServer(sovits_path, gpt_path)
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        print("脚本所在目录:", script_directory)
-        cankao_dir = os.path.join(script_directory, "cankao")
-        # 获取参考音频文件，即参考目录下一个名为cankao.wav的文件
-        cankao_file = os.path.join(cankao_dir, "cankao.wav") 
-        cankao_txtfile = os.path.join(cankao_dir, "cankao.txt")
-        #读出参考文本文件的内容
-        with open(cankao_txtfile, "r", encoding="utf-8") as file:
-            cankao_text = file.read()
-        print("参考音频文件:", cankao_file)
-        print("参考文本内容:", cankao_text)
-        # 检查用户是否选择了目录
-        if not input_dir:
-            print("未选择任何目录，程序退出。")
-        else:
-            print(f"选择的目录: {input_dir}")
-            # 用户输入语速
-            speed = "0.8"
-            # 设置输出目录
-            #output_dir = os.path.join(input_dir, "output_mp3_files")
-            output_dir = input_dir
-            # 执行批量处理
-            process_txt_files_in_directory(input_dir, output_dir, speed=speed,cankao_file=cankao_file,cankao_txt=cankao_text)
-            print(f"所有文件已处理，MP3 文件保存在: {output_dir}")
-    else:
-        print("请选择一个包含待处理文件的目录，并确保模型路径已设置。")
-        print("sovits_path:", sovits_path)
-        print("gpt_path:", gpt_path)
-        print("input_dir:", input_dir)
-        print(os.path.isdir(input_dir) )
-
-
-def setServer(sovits_path, gpt_path):
-    result = client.predict(
-        sovits_path=sovits_path,
-        prompt_language="中文",
-        text_language="中文",
-        api_name="/change_sovits_weights"
-    )
-    print(result)
-    result = client.predict(
-		weights_path=gpt_path,
-		api_name="/init_t2s_weights"
-    )
-    print(result)
-
 # 主程序
 if __name__ == "__main__":
+    # 使用 tkinter 弹出窗口让用户选择输入目录
+    Tk().withdraw()  # 隐藏主窗口
+    input_dir = askdirectory(title="请选择包含 .txt 文件的目录")
+    # 获取脚本所在目录，推导出参考音频的目录
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+    print("脚本所在目录:", script_directory)
+    cankao_dir = os.path.join(script_directory, "cankao")
+    # 获取参考音频文件，即参考目录下一个名为cankao.wav的文件
+    cankao_file = os.path.join(cankao_dir, "cankao.wav") 
+    cankao_txtfile = os.path.join(cankao_dir, "cankao.txt")
+    #读出参考文本文件的内容
+    with open(cankao_txtfile, "r", encoding="utf-8") as file:
+        cankao_text = file.read()
+    print("参考音频文件:", cankao_file)
+    print("参考文本内容:", cankao_text)
+    # 检查用户是否选择了目录
+    if not input_dir:
+        print("未选择任何目录，程序退出。")
+    else:
+        print(f"选择的目录: {input_dir}")
 
-    # Create main window
-    root = Tk()
-    root.title("Text to mp3 批处理")
-    root.geometry("600x500")
-    Label(root, text="第一步：选择模型").pack(pady=5)
-    
-    # Get model lists from API
-    result = client.predict(api_name="/change_choices")
-    print(result)
-    # Get model choices from the result tuple
-    sovits_choices = result[0]["choices"]
-    gpt_choices = result[1]["choices"]
-    
-    # Extract unique model names
-    speaker_list_1 = [item[0] for item in sovits_choices]
-    speaker_list_2 = [item[0] for item in gpt_choices]
-    print("SoVITS模型列表:", speaker_list_1)
-    print("GPT模型列表:", speaker_list_2)
-    # Create dropdown menus
-    selected_model_1 = StringVar(root)
-    selected_model_2 = StringVar(root)
+        # 用户输入语速
+        speed = "0.8"
 
-    Label(root, text="SoVITS模型列表:").pack(pady=5)
-    OptionMenu(root, selected_model_1, *speaker_list_1).pack(pady=5)
-
-    Label(root, text="GPT模型列表:").pack(pady=5)
-    OptionMenu(root, selected_model_2, *speaker_list_2).pack(pady=5)
-
-    # Initialize input directory variable
-
-    input_dir = ""  # Variable to store input directory
-    def select_directory():
-        directory = askdirectory(title="Select Directory")
-        if directory:
-            input_dir = directory
-            label_input_dir.set(f"{input_dir}")
-        
-    
-    Label(root, text="第二步：选择输入目录").pack(pady=5)   
-    Button(root, text="选择目录：", command=select_directory).pack(pady=20)
-    # Variable to store selected directory
-    label_input_dir = StringVar(root)
-    # Label to display selected directory
-    dir_label = Label(root, textvariable=label_input_dir)
-    dir_label.pack(pady=5)
-    Label(root, text="第三步：点击Run").pack(pady=5)
-
-    Button(root, text="Run", command=lambda: run_processing(label_input_dir.get(),selected_model_1.get(),selected_model_2.get())).pack(pady=20)
-    root.mainloop()
-
-
+        # 设置输出目录
+        #output_dir = os.path.join(input_dir, "output_mp3_files")
+        output_dir = input_dir
+        # 执行批量处理
+        process_txt_files_in_directory(input_dir, output_dir, speed=speed,cankao_file=cankao_file,cankao_txt=cankao_text)
+        print(f"所有文件已处理，MP3 文件保存在: {output_dir}")
