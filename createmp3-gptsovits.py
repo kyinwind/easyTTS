@@ -36,29 +36,49 @@ def synthesize_text_to_mp3(text, output_path, speed="0.8",cankao_file="",cankao_
     # 确保传递的 `cankao_file` 是一个字符串路径，而不是文件对象
     ref_audio_path = handle_file(cankao_file)
     result = client.predict(
-        text= text,
-        text_lang="中文",
-        ref_audio_path=ref_audio_path,  # 这里修正
-        aux_ref_audio_paths=[],
-        prompt_text=cankao_txt,
-        prompt_lang="中文",
-        top_k=5,
-        top_p=1,
-        temperature=1,
-        text_split_method="凑四句一切",
-        batch_size=20,
-        speed_factor=1,
-        ref_text_free=False,
-        split_bucket=True,
-        fragment_interval=0.3,
-        seed=-1,
-        keep_random=True,
-        parallel_infer=True,
-        repetition_penalty=1.35,
-        api_name="/inference"
+		ref_wav_path=ref_audio_path, 
+		prompt_text=cankao_txt,
+		prompt_language="中文",
+		text=text,
+		text_language="中文",
+		how_to_cut="凑四句一切",
+		top_k=15,
+		top_p=1,
+		temperature=1,
+		ref_free=False,
+		speed=1,
+		if_freeze=False,
+		inp_refs=None,
+		sample_steps=8,
+		if_sr=False,
+		pause_second=0.3,
+		api_name="/get_tts_wav"
     )
     print(result)
-    print(output_path)
+    # result = client.predict(
+    #     text= text,
+    #     text_lang="中文",
+    #     ref_audio_path=ref_audio_path,  # 这里修正
+    #     aux_ref_audio_paths=[],
+    #     prompt_text=cankao_txt,
+    #     prompt_lang="中文",
+    #     top_k=5,
+    #     top_p=1,
+    #     temperature=1,
+    #     text_split_method="凑四句一切",
+    #     batch_size=20,
+    #     speed_factor=1,
+    #     ref_text_free=False,
+    #     split_bucket=True,
+    #     fragment_interval=0.3,
+    #     seed=-1,
+    #     keep_random=True,
+    #     parallel_infer=false,
+    #     repetition_penalty=1.35,
+    #     api_name="/inference"
+    # )
+    # print(result)
+    #print(output_path)
     # 从wav文件加载音频数据
     wav_file_path = result[0]
     audio = AudioSegment.from_wav(wav_file_path)
@@ -181,8 +201,8 @@ def setServer(sovits_path, gpt_path):
     )
     print(result)
     result = client.predict(
-		weights_path=gpt_path,
-		api_name="/init_t2s_weights"
+		gpt_path=gpt_path,
+		api_name="/change_gpt_weights"
     )
     print(result)
 
